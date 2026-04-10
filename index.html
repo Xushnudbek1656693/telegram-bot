@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Not Koin Simple</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+    body { font-family: 'Press Start 2P', sans-serif; }
+    .coin {
+      transition: transform 0.1s;
+      user-select: none;
+    }
+    .coin:active { transform: scale(0.9); }
+  </style>
+</head>
+<body class="bg-[#0a0a0a] text-white min-h-screen flex flex-col items-center justify-center overflow-hidden">
+
+  <div class="w-full max-w-md mx-auto p-4">
+    <!-- Header -->
+    <div class="flex justify-between items-center mb-6">
+      <div class="text-yellow-400 text-xl">🪙 NOT KOIN</div>
+      <div id="username" class="text-sm text-gray-400"></div>
+    </div>
+
+    <!-- Coin -->
+    <div id="coin" class="coin mx-auto w-64 h-64 rounded-full bg-gradient-to-br from-yellow-300 to-yellow-500 flex items-center justify-center text-8xl shadow-2xl cursor-pointer border-8 border-yellow-400">
+      🪙
+    </div>
+
+    <!-- Score -->
+    <div class="mt-8 text-center">
+      <div class="text-5xl font-bold text-yellow-300" id="coins">0</div>
+      <div class="text-sm text-gray-500">NOT COIN</div>
+    </div>
+
+    <!-- Energy -->
+    <div class="mt-8 px-4">
+      <div class="flex justify-between text-xs mb-1">
+        <span>ENERGIYA</span>
+        <span id="energy-text">1000 / 1000</span>
+      </div>
+      <div class="h-4 bg-gray-800 rounded-full overflow-hidden">
+        <div id="energy-bar" class="h-full bg-yellow-400 w-[100%] transition-all"></div>
+      </div>
+    </div>
+
+    <!-- Tap value -->
+    <div class="text-center mt-6 text-sm text-gray-400">
+      Har bosish: <span id="tap-value" class="text-yellow-300 font-bold">+1</span>
+    </div>
+
+    <!-- Boost button -->
+    <button id="boost-btn"
+            class="mt-8 w-full py-4 bg-gradient-to-r from-purple-500 to-pink-500 rounded-2xl text-white font-bold text-lg active:scale-95 transition">
+      ⚡ BOOST (x2 — 10 soniya)
+    </button>
+
+    <div id="status" class="text-center mt-4 text-xs text-green-400"></div>
+  </div>
+
+  <script>
+    const tg = window.Telegram.WebApp;
+    tg.expand();
+    tg.ready();
+
+    // LocalStorage dan saqlash
+    let coins = parseInt(localStorage.getItem('coins')) || 0;
+    let energy = parseInt(localStorage.getItem('energy')) || 1000;
+    const maxEnergy = 1000;
+    let tapValue = 1;
+    let multiplier = 1;
+    let boostTimeout = null;
+
+    const coinEl = document.getElementById('coin');
+    const coinsEl = document.getElementById('coins');
+    const energyBar = document.getElementById('energy-bar');
+    const energyText = document.getElementById('energy-text');
+    const tapValueEl = document.getElementById('tap-value');
+    const boostBtn = document.getElementById('boost-btn');
+    const statusEl = document.getElementById('status');
+    const usernameEl = document.getElementById('username');
+
+    // Username ko‘rsatish
+    if (tg.initDataUnsafe.user) {
+      usernameEl.textContent = '@' + tg.initDataUnsafe.user.username || tg.initDataUnsafe.user.first_name;
+    } else {
+      usernameEl.textContent = 'Test rejimi';
+    }
+
+    function updateUI() {
+      coinsEl.textContent = coins.toLocaleString('ru-RU');
+      energyText.textContent = `${Math.floor(energy)} / ${maxEnergy}`;
+      energyBar.style.width = `${(energy / maxEnergy) * 100}%`;
+      localStorage.setItem('coins', coins);
+      localStorage.setItem('energy', energy);
+    }
+
+    // Tap funksiyasi
+    coinEl.addEventListener('click', (e) => {
+      if (energy < 1) {
+        statusEl.textContent = '⚠️ Energiya tugadi!';
+        setTimeout(() => statusEl.textContent = '', 2000);
+        return;
+      }
+
+      const points = tapValue * multiplier;
+      coins += points;
+      energy -= 2; // har tapda 2 energiya ketadi
+
+      // Animation
+      const particle = document.createElement('div');
+      particle.textContent = `+${points}`;
+      particle.style.position = 'absolute';
+      particle.style.left = e.clientX + 'px';
+      particle.style.top = e.clientY + 'px';
+      particle.style.color = '#facc15';
+      particle.style.fontWeight = 'bold';
+      particle.style.pointerEvents = 'none';
+      document.body.appendChild(particle);
+
+      setTimeout(() => particle.remove(), 800);
+
+      updateUI();
+    });
+
+    // Boost
+    boostBtn.addEventListener('click', () => {
+      if (boostTimeout) return;
+      
+      multiplier = 2;
+      statusEl.innerHTML = '🔥 BOOST FAOL! (x2)';
+      
+      boostTimeout = setTimeout(() => {
+        multiplier = 1;
+        boostTimeout = null;
+        statusEl.textContent = '';
+      }, 10000);
+    });
+
+    // Energiya har 1 soniyada +10 tiklanadi
+    setInterval(() => {
+      if (energy < maxEnergy) {
+        energy = Math.min(maxEnergy, energy + 10);
+        updateUI();
+      }
+    }, 1000);
+
+    // Boshlang‘ich yuklash
+    updateUI();
+    console.log('%c✅ Not Koin Simple ishga tushdi!', 'color: #facc15; font-size: 16px');
+  </script>
+</body>
+</html>
